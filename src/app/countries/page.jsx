@@ -18,7 +18,7 @@ export default function Countries() {
   const [allCountries, setAllCountries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
 
   const fetchCountries = async (region = "") => {
     setIsLoading(true);
@@ -30,7 +30,7 @@ export default function Countries() {
       setCountries(response.data);
       if (!region) {
         setAllCountries(response.data);
-        toast.success("Países carregados!");
+        toast.success("Países carregados com sucesso!");
       }
     } catch (error) {
       console.error("Erro ao carregar países:", error);
@@ -39,10 +39,6 @@ export default function Countries() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCountries();
-  }, []);
 
   const resetFilter = () => {
     setCurrentPage(1);
@@ -59,6 +55,36 @@ export default function Countries() {
       hideProgressBar: true,
     });
   };
+
+  useEffect(() => {
+    const fetchComCache = async () => {
+      const cacheKey = 'countriesData';
+      const cache = sessionStorage.getItem(cacheKey);
+
+      if (cache) {
+        setCountries(JSON.parse(cache));
+        setIsLoading(false);
+        toast.info("Dados carregados do cache!", {
+          position: "bottom-right",
+          hideProgressBar: true,
+        });
+         return;
+      }
+
+      try {
+        const resposta = await axios.get('https://restcountries.com/v3.1/all');
+        setCountries(resposta.data);
+        sessionStorage.setItem(cacheKey, JSON.stringify(resposta.data));
+      } catch (erro) {
+        alert('Erro ao buscar países');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchComCache();
+  }, []);
+
 
   return (
     <div className={styles.container}>
@@ -111,6 +137,8 @@ export default function Countries() {
           onChange={(page) => setCurrentPage(page)}
           className={styles.pagination}
           style={{ marginTop: "20px" }}
+          showSizeChanger={false}
+          hideOnSinglePage={true}
         />
       )}
 
